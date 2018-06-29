@@ -81,6 +81,7 @@ public final class SlidingWindowCounter<T> implements Serializable {
         this.tailSlot = slotAfter(headSlot);
     }
 
+    /*更新数据第一个节点*/
     public void incrementCount(T obj) {
         objCounter.incrementCount(obj, headSlot);
     }
@@ -96,17 +97,19 @@ public final class SlidingWindowCounter<T> implements Serializable {
      */
     public Map<T, Long> getCountsThenAdvanceWindow() {
         Map<T, Long> counts = objCounter.getCounts();
-        objCounter.wipeZeros();
-        objCounter.wipeSlot(tailSlot);
+        objCounter.wipeZeros();      //清理所有sum(long[])==0 的，删除已经不被使用的obj, 释放空间
+        objCounter.wipeSlot(tailSlot); //清理尾部列
         advanceHead();
         return counts;
     }
 
+    /*更换指针*/
     private void advanceHead() {
         headSlot = tailSlot;
         tailSlot = slotAfter(tailSlot);
     }
 
+    /*保持tailslot和headslot在同一slot长度内*/
     private int slotAfter(int slot) {
         return (slot + 1) % windowLengthInSlots;
     }

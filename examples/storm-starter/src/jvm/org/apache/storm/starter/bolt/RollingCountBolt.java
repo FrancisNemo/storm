@@ -12,9 +12,6 @@
 
 package org.apache.storm.starter.bolt;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 import org.apache.log4j.Logger;
 import org.apache.storm.Config;
 import org.apache.storm.starter.tools.NthLastModifiedTimeTracker;
@@ -27,6 +24,9 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.TupleUtils;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This bolt performs rolling counts of incoming objects, i.e. sliding window based counting.
@@ -59,8 +59,8 @@ public class RollingCountBolt extends BaseRichBolt {
         + " (you can safely ignore this warning during the startup phase)";
 
     private final SlidingWindowCounter<Object> counter;
-    private final int windowLengthInSeconds;
-    private final int emitFrequencyInSeconds;
+    private final int windowLengthInSeconds;  //总窗口长度, 长度用秒计算
+    private final int emitFrequencyInSeconds;   //触发频率，长度用秒计算
     private OutputCollector collector;
     private NthLastModifiedTimeTracker lastModifiedTracker;
 
@@ -71,10 +71,10 @@ public class RollingCountBolt extends BaseRichBolt {
     public RollingCountBolt(int windowLengthInSeconds, int emitFrequencyInSeconds) {
         this.windowLengthInSeconds = windowLengthInSeconds;
         this.emitFrequencyInSeconds = emitFrequencyInSeconds;
-        counter = new SlidingWindowCounter<Object>(deriveNumWindowChunksFrom(this.windowLengthInSeconds,
-                                                                             this.emitFrequencyInSeconds));
+        counter = new SlidingWindowCounter<Object>(deriveNumWindowChunksFrom(this.windowLengthInSeconds, this.emitFrequencyInSeconds));
     }
 
+    /*每个slot长度*/
     private int deriveNumWindowChunksFrom(int windowLengthInSeconds, int windowUpdateFrequencyInSeconds) {
         return windowLengthInSeconds / windowUpdateFrequencyInSeconds;
     }
@@ -88,14 +88,15 @@ public class RollingCountBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple tuple) {
-        if (TupleUtils.isTick(tuple)) {
+        if (TupleUtils.isTick(tuple)) {    /* 该方法在storm配置后才能生效  {@link org.apache.storm.starter.bolt.RollingCountBolt#getComponentConfiguration}*/
             LOG.debug("Received tick tuple, triggering emit of current window counts");
-            emitCurrentWindowCounts();
+            emitCurrentWindowCounts();    /*触发滑动窗口*/
         } else {
-            countObjAndAck(tuple);
+            countObjAndAck(tuple);  /*窗口内，继续统计*/
         }
     }
 
+    /**/
     private void emitCurrentWindowCounts() {
         Map<Object, Long> counts = counter.getCountsThenAdvanceWindow();
         int actualWindowLengthInSeconds = lastModifiedTracker.secondsSinceOldestModification();
@@ -103,21 +104,27 @@ public class RollingCountBolt extends BaseRichBolt {
         if (actualWindowLengthInSeconds != windowLengthInSeconds) {
             LOG.warn(String.format(WINDOW_LENGTH_WARNING_TEMPLATE, actualWindowLengthInSeconds, windowLengthInSeconds));
         }
-        emit(counts, actualWindowLengthInSeconds);
+        //emit(counts, actualWindowLengthInSeconds);
+        /*直接使用lambda实现
+        * @param actualWindowLengthInSeconds  因为实际emit触发时间, 不可能刚好是3 min, 会有误差, 所以需要给出实际使用时间
+        * */
+        counts.forEach((k,v)->{
+            collector.emit(new Values(k,v,actualWindowLengthInSeconds));
+        });
     }
 
-    private void emit(Map<Object, Long> counts, int actualWindowLengthInSeconds) {
-        for (Entry<Object, Long> entry : counts.entrySet()) {
-            Object obj = entry.getKey();
-            Long count = entry.getValue();
-            collector.emit(new Values(obj, count, actualWindowLengthInSeconds));
-        }
-    }
+//    private void emit(Map<Object, Long> counts, int actualWindowLengthInSeconds) {
+//        for (Entry<Object, Long> entry : counts.entrySet()) {
+//            Object obj = entry.getKey();
+//            Long count = entry.getValue();
+//            collector.emit(new Values(obj, count, actualWindowLengthInSeconds));
+//        }
+//    }
 
     private void countObjAndAck(Tuple tuple) {
-        Object obj = tuple.getValue(0);
-        counter.incrementCount(obj);
-        collector.ack(tuple);
+        Object obj = tuple.getValue(0);  //获取记录
+        counter.incrementCount(obj); // 当前头节点，统计值+1
+        collector.ack(tuple); //手动ack
     }
 
     @Override

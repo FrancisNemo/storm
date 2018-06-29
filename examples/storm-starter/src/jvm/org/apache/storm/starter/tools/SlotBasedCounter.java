@@ -28,7 +28,10 @@ public final class SlotBasedCounter<T> implements Serializable {
 
     private static final long serialVersionUID = 4858185737378394432L;
 
+    /*对象为key, long[] 存储每个slot内统计的值*/
     private final Map<T, long[]> objToCounts = new HashMap<T, long[]>();
+
+    /*窗口的长度*/
     private final int numSlots;
 
     public SlotBasedCounter(int numSlots) {
@@ -89,6 +92,14 @@ public final class SlotBasedCounter<T> implements Serializable {
         counts[slot] = 0;
     }
 
+    /*lambda 清理整列*/
+    public void wipeSlotForEach(int slot) {
+        objToCounts.forEach((k,v)->{
+            v[slot] = 0;
+            }
+        );
+    }
+
     private boolean shouldBeRemovedFromCounter(T obj) {
         return computeTotalCount(obj) == 0;
     }
@@ -103,6 +114,15 @@ public final class SlotBasedCounter<T> implements Serializable {
                 it.remove();
             }
         }
+    }
+
+    /*lambda 清理整行*/
+    public void wipeZerosForEach() {
+        objToCounts.forEach((k,v)->{
+            if(computeTotalCount(k) == 0){
+                objToCounts.remove(k);
+            }
+        });
     }
 
 }
