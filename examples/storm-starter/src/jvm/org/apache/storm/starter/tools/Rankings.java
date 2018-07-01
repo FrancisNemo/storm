@@ -24,7 +24,7 @@ public class Rankings implements Serializable {
     private static final int DEFAULT_COUNT = 10;
 
     private final int maxSize;
-    private final List<Rankable> rankedItems = Lists.newArrayList();
+    private final List<Rankable> rankedItems = Lists.newArrayList();  //已排序的
 
     public Rankings() {
         this(DEFAULT_COUNT);
@@ -84,9 +84,9 @@ public class Rankings implements Serializable {
 
     public void updateWith(Rankable r) {
         synchronized (rankedItems) {
-            addOrReplace(r);
-            rerank();
-            shrinkRankingsIfNeeded();
+            addOrReplace(r);   // 新增或覆盖
+            rerank();   // 重排
+            shrinkRankingsIfNeeded(); //减少多余的
         }
     }
 
@@ -110,6 +110,7 @@ public class Rankings implements Serializable {
         return null;
     }
 
+    //排序，倒序。
     private void rerank() {
         Collections.sort(rankedItems);
         Collections.reverse(rankedItems);
