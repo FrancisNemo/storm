@@ -12,12 +12,6 @@
 
 package org.apache.storm.starter.bolt;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.apache.storm.Config;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.OutputCollector;
@@ -27,6 +21,8 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.TimeCacheMap;
+
+import java.util.*;
 
 /** Example of a simple custom bolt for joining two streams
  *  NOTE: Prefer to use the built-in JoinBolt wherever applicable
@@ -114,6 +110,9 @@ public class SingleJoinBolt extends BaseRichBolt {
             for (Tuple tuple : tuples.values()) {
                 _collector.fail(tuple);
             }
+
+            /*使用lambda方式*/
+           // tuples.forEach((k,v)->{_collector.fail(v);});
         }
     }
 }

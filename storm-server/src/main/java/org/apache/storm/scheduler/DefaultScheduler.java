@@ -18,13 +18,10 @@
 
 package org.apache.storm.scheduler;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import org.apache.storm.utils.Utils;
+
+import java.util.*;
+import java.util.Map.Entry;
 
 public class DefaultScheduler implements IScheduler {
 
@@ -70,12 +67,12 @@ public class DefaultScheduler implements IScheduler {
     }
 
     public static void defaultSchedule(Topologies topologies, Cluster cluster) {
-        for (TopologyDetails topology : cluster.needsSchedulingTopologies()) {
-            List<WorkerSlot> availableSlots = cluster.getAvailableSlots();
-            Set<ExecutorDetails> allExecutors = topology.getExecutors();
+        for (TopologyDetails topology : cluster.needsSchedulingTopologies()) {  //遍历cluster中的topology
+            List<WorkerSlot> availableSlots = cluster.getAvailableSlots();   //获取可用slots
+            Set<ExecutorDetails> allExecutors = topology.getExecutors(); //获取所有线程
 
             Map<WorkerSlot, List<ExecutorDetails>> aliveAssigned =
-                EvenScheduler.getAliveAssignedWorkerSlotExecutors(cluster, topology.getId());
+                EvenScheduler.getAliveAssignedWorkerSlotExecutors(cluster, topology.getId());  //均衡调度器
             Set<ExecutorDetails> aliveExecutors = new HashSet<ExecutorDetails>();
             for (List<ExecutorDetails> list : aliveAssigned.values()) {
                 aliveExecutors.addAll(list);

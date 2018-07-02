@@ -39,12 +39,27 @@ public class TridentWordCount {
         spout.setCycle(true);
 
         TridentTopology topology = new TridentTopology();
+        /*stream操作
+        * 1分词： each 是filter底层实现. Split算子
+        * 2分组：groupby
+        * 3保存中间结果：persistentAggregate   MemoryMapState 存储， Count算子 */
         TridentState wordCounts = topology.newStream("spout1", spout).parallelismHint(16).each(new Fields("sentence"),
                                                                                                new Split(), new Fields("word"))
                                           .groupBy(new Fields("word")).persistentAggregate(new MemoryMapState.Factory(),
                                                                                            new Count(), new Fields("count"))
                                           .parallelismHint(16);
 
+        /*DRPCStream 服务，服务名 words
+        * 根据传入条件分词
+        * groupby 分组
+        * stateQuery 查询 wordCounts中缓存的
+        * 再次过滤为null
+        * Project投影 word, count 字段
+        *
+        *
+        * 后面的需要对应前面的，字段名太多，有点眼花。
+        *
+        * */
         topology.newDRPCStream("words").each(new Fields("args"), new Split(), new Fields("word"))
                 .groupBy(new Fields("word"))
                 .stateQuery(wordCounts, new Fields("word"), new MapGet(), new Fields("count"))
@@ -64,7 +79,7 @@ public class TridentWordCount {
         StormSubmitter.submitTopologyWithProgressBar(topoName, conf, buildTopology());
         try (DRPCClient drpc = DRPCClient.getConfiguredClient(conf)) {
             for (int i = 0; i < 10; i++) {
-                System.out.println("DRPC RESULT: " + drpc.execute("words", "cat the dog jumped"));
+                System.out.println("DRPC RESULT: " + drpc.execute("words", "cat the dog jumped")); // 客户端调用drpc
                 Thread.sleep(1000);
             }
         }
