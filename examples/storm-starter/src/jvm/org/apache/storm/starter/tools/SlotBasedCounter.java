@@ -13,6 +13,7 @@
 package org.apache.storm.starter.tools;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -61,19 +62,15 @@ public final class SlotBasedCounter<T> implements Serializable {
 
     public Map<T, Long> getCounts() {
         Map<T, Long> result = new HashMap<T, Long>();
-        for (T obj : objToCounts.keySet()) {
-            result.put(obj, computeTotalCount(obj));
-        }
+        objToCounts.forEach((k,v)->{result.put(k, computeTotalCount(k));});
+//        for (T obj : objToCounts.keySet()) {
+//            result.put(obj, computeTotalCount(obj));
+//        }
         return result;
     }
 
     private long computeTotalCount(T obj) {
-        long[] curr = objToCounts.get(obj);
-        long total = 0;
-        for (long l : curr) {
-            total += l;
-        }
-        return total;
+        return Arrays.stream(objToCounts.get(obj)).count();
     }
 
     /**
@@ -81,6 +78,7 @@ public final class SlotBasedCounter<T> implements Serializable {
      *
      * @param slot
      */
+    @Deprecated
     public void wipeSlot(int slot) {
         for (T obj : objToCounts.keySet()) {
             resetSlotCountToZero(obj, slot);
@@ -107,6 +105,7 @@ public final class SlotBasedCounter<T> implements Serializable {
     /**
      * Remove any object from the counter whose total count is zero (to free up memory).
      */
+    @Deprecated
     public void wipeZeros() {
         for (Iterator<Map.Entry<T, long[]>> it = objToCounts.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<T, long[]> entry = it.next();

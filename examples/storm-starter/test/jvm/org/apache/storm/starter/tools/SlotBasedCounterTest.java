@@ -166,7 +166,8 @@ public class SlotBasedCounterTest {
 
         // when
         counter.wipeSlot(wipeSlot);
-        counter.wipeZeros();
+        //counter.wipeZeros();
+        counter.wipeZerosForEach();
 
         // then
         assertThat(counter.getCounts()).doesNotContainKey(willBeRemoved);

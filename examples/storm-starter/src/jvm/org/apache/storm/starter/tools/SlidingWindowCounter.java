@@ -19,7 +19,7 @@ import java.util.Map;
  * This class counts objects in a sliding window fashion.
  * <p/>
  * It is designed 1) to give multiple "producer" threads write access to the counter, i.e. being able to increment
- * counts of objects, and 2) to give a single "consumer" thread (e.g. {@link PeriodicSlidingWindowCounter}) read access
+ * counts of objects, and 2) to give a single "consumer" thread (e.g. {@link SlidingWindowCounter}) read access
  * to the counter. Whenever the consumer thread performs a read operation, this class will advance the head slot of the
  * sliding window counter. This means that the consumer thread indirectly controls where writes of the producer threads
  * will go to. Also, by itself this class will not advance the head slot.
@@ -96,17 +96,18 @@ public final class SlidingWindowCounter<T> implements Serializable {
      * @return The current (total) counts of all tracked objects.
      */
     public Map<T, Long> getCountsThenAdvanceWindow() {
-        Map<T, Long> counts = objCounter.getCounts();
-        objCounter.wipeZeros();      //清理所有sum(long[])==0 的，删除已经不被使用的obj, 释放空间
-        objCounter.wipeSlot(tailSlot); //清理尾部列
-        advanceHead();
+        Map<T, Long> counts = objCounter.getCounts(); //统计窗口内总和
+//        objCounter.wipeZeros();      // 清理所有sum(long[])==0 的，仅仅是删除已经不被使用的obj, 释放内部map空间。
+        objCounter.wipeZerosForEach();
+//        objCounter.wipeSlot(tailSlot); //
+        objCounter.wipeSlotForEach(tailSlot); //设置为0
+        advanceHead();  //向后滑动1
         return counts;
     }
 
-    /*更换指针*/
     private void advanceHead() {
         headSlot = tailSlot;
-        tailSlot = slotAfter(tailSlot);
+        tailSlot = slotAfter(tailSlot);  //递增1
     }
 
     /*保持tailslot和headslot在同一slot长度内*/

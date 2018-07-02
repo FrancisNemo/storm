@@ -74,9 +74,9 @@ public abstract class AbstractRankerBolt extends BaseBasicBolt {
     public final void execute(Tuple tuple, BasicOutputCollector collector) {
         if (TupleUtils.isTick(tuple)) {
             getLogger().debug("Received tick tuple, triggering emit of current rankings");
-            emitRankings(collector);
+            emitRankings(collector);  //发送统计排序值
         } else {
-            updateRankingsWithTuple(tuple);
+            updateRankingsWithTuple(tuple);  //重新统计排序值
         }
     }
 

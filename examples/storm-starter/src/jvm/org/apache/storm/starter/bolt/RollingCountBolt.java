@@ -96,10 +96,10 @@ public class RollingCountBolt extends BaseRichBolt {
         }
     }
 
-    /**/
+    /*基本窗口继续滑动，统计聚合值继续往后发送*/
     private void emitCurrentWindowCounts() {
-        Map<Object, Long> counts = counter.getCountsThenAdvanceWindow();
-        int actualWindowLengthInSeconds = lastModifiedTracker.secondsSinceOldestModification();
+        Map<Object, Long> counts = counter.getCountsThenAdvanceWindow();  //获取统计值，并向后继续滑动窗口
+        int actualWindowLengthInSeconds = lastModifiedTracker.secondsSinceOldestModification();  //实际消耗的时间
         lastModifiedTracker.markAsModified();
         if (actualWindowLengthInSeconds != windowLengthInSeconds) {
             LOG.warn(String.format(WINDOW_LENGTH_WARNING_TEMPLATE, actualWindowLengthInSeconds, windowLengthInSeconds));
